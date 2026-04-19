@@ -23,15 +23,15 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PHP_UPLOAD_MAX_FILE_SIZE=100M \
     PHP_ALLOW_URL_FOPEN=Off
 
-# 1. Install PHP 8.4 (sin Apache, usando nginx + php-fpm)
+# 1. Instalar PHP y Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY .fly/php/ondrej_ubuntu_php.gpg /etc/apt/trusted.gpg.d/ondrej_ubuntu_php.gpg
+ADD .fly/php/packages/${PHP_VERSION}.txt /tmp/php-packages.txt
 
 RUN echo "deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /etc/apt/sources.list.d/ondrej-ubuntu-php.list \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get update \
-    # Herramientas base del sistema (sin apache2)
     && apt-get install -y --no-install-recommends \
        gnupg2 \
        ca-certificates \
@@ -46,21 +46,8 @@ RUN echo "deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /
        nginx \
        supervisor \
        cron \
-    # PHP 8.4 con php-fpm (sin libapache2-mod-php que arrastra apache2-bin)
-    && apt-get install -y --no-install-recommends \
-       php8.4 \
-       php8.4-cli \
-       php8.4-fpm \
-       php8.4-curl \
-       php8.4-mbstring \
-       php8.4-xml \
-       php8.4-pgsql \
-       php8.4-sqlite3 \
-       php8.4-bcmath \
-       php8.4-gd \
-       php8.4-intl \
-       php8.4-zip \
-    && ln -sf /usr/sbin/php-fpm8.4 /usr/sbin/php-fpm \
+    && xargs apt-get install -y --no-install-recommends < /tmp/php-packages.txt \
+    && ln -sf /usr/sbin/php-fpm${PHP_VERSION} /usr/sbin/php-fpm \
     && mkdir -p /var/www/html/public \
     && echo "index" > /var/www/html/public/index.php \
     && apt-get clean \
