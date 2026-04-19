@@ -30,19 +30,37 @@ ENV DEBIAN_FRONTEND=noninteractive \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY .fly/php/ondrej_ubuntu_php.gpg /etc/apt/trusted.gpg.d/ondrej_ubuntu_php.gpg
 ADD .fly/php/packages/${PHP_VERSION}.txt /tmp/php-packages.txt
+# ... (líneas anteriores iguales)
 
-RUN apt-get update \
+# Prepare base container: 
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY .fly/php/ondrej_ubuntu_php.gpg /etc/apt/trusted.gpg.d/ondrej_ubuntu_php.gpg
+
+# Aseguramos que PHP_VERSION sea 8.4 para este paso
+RUN echo "deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /etc/apt/sources.list.d/ondrej-ubuntu-php.list \
+    && apt-get update \
     && apt-get install -y --no-install-recommends gnupg2 ca-certificates git-core curl zip unzip \
                                                   rsync vim-tiny htop sqlite3 nginx supervisor cron \
-    && ln -sf /usr/bin/vim.tiny /etc/alternatives/vim \
-    && ln -sf /etc/alternatives/vim /usr/bin/vim \
-    && echo "deb http://ppa.launchpad.net/ondrej/php/ubuntu jammy main" > /etc/apt/sources.list.d/ondrej-ubuntu-php-focal.list \
     && apt-get update \
-    && apt-get -y --no-install-recommends install $(cat /tmp/php-packages.txt) \
-    && ln -sf /usr/sbin/php-fpm${PHP_VERSION} /usr/sbin/php-fpm \
+    && apt-get install -y --no-install-recommends \
+       php8.4 \
+       php8.4-cli \
+       php8.4-fpm \
+       php8.4-curl \
+       php8.4-mbstring \
+       php8.4-xml \
+       php8.4-pgsql \
+       php8.4-sqlite3 \
+       php8.4-bcmath \
+       php8.4-gd \
+       php8.4-intl \
+       php8.4-zip \
+    && ln -sf /usr/sbin/php-fpm8.4 /usr/sbin/php-fpm \
     && mkdir -p /var/www/html/public && echo "index" > /var/www/html/public/index.php \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
+
+# ... (resto del archivo)
 
 # 2. Copy config files to proper locations
 COPY .fly/nginx/ /etc/nginx/
