@@ -2,11 +2,9 @@
 
 ARG PHP_VERSION=8.4
 ARG NODE_VERSION=18
-FROM ubuntu:22.04 as base
+FROM ubuntu:22.04 AS base
 LABEL fly_launch_runtime="laravel"
 
-# PHP_VERSION needs to be repeated here
-# See https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG PHP_VERSION
 ENV DEBIAN_FRONTEND=noninteractive \
     COMPOSER_ALLOW_SUPERUSER=1 \
@@ -25,23 +23,30 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PHP_UPLOAD_MAX_FILE_SIZE=100M \
     PHP_ALLOW_URL_FOPEN=Off
 
-# Prepare base container: 
-# 1. Install PHP, Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-COPY .fly/php/ondrej_ubuntu_php.gpg /etc/apt/trusted.gpg.d/ondrej_ubuntu_php.gpg
-ADD .fly/php/packages/${PHP_VERSION}.txt /tmp/php-packages.txt
-# ... (líneas anteriores iguales)
-
-# Prepare base container: 
+# 1. Install PHP 8.4 (sin Apache, usando nginx + php-fpm)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY .fly/php/ondrej_ubuntu_php.gpg /etc/apt/trusted.gpg.d/ondrej_ubuntu_php.gpg
 
-# Aseguramos que PHP_VERSION sea 8.4 para este paso
 RUN echo "deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /etc/apt/sources.list.d/ondrej-ubuntu-php.list \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
     && apt-get update \
-    && apt-get install -y --no-install-recommends gnupg2 ca-certificates git-core curl zip unzip \
-                                                  rsync vim-tiny htop sqlite3 nginx supervisor cron \
-    && apt-get update \
+    # Herramientas base del sistema (sin apache2)
+    && apt-get install -y --no-install-recommends \
+       gnupg2 \
+       ca-certificates \
+       git-core \
+       curl \
+       zip \
+       unzip \
+       rsync \
+       vim-tiny \
+       htop \
+       sqlite3 \
+       nginx \
+       supervisor \
+       cron \
+    # PHP 8.4 con php-fpm (sin libapache2-mod-php que arrastra apache2-bin)
     && apt-get install -y --no-install-recommends \
        php8.4 \
        php8.4-cli \
@@ -56,53 +61,45 @@ RUN echo "deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /
        php8.4-intl \
        php8.4-zip \
     && ln -sf /usr/sbin/php-fpm8.4 /usr/sbin/php-fpm \
-    && mkdir -p /var/www/html/public && echo "index" > /var/www/html/public/index.php \
+    && mkdir -p /var/www/html/public \
+    && echo "index" > /var/www/html/public/index.php \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
-# ... (resto del archivo)
-
-# 2. Copy config files to proper locations
+# 2. Copiar archivos de configuración
 COPY .fly/nginx/ /etc/nginx/
 COPY .fly/fpm/ /etc/php/${PHP_VERSION}/fpm/
 COPY .fly/supervisor/ /etc/supervisor/
 COPY .fly/entrypoint.sh /entrypoint
 COPY .fly/start-nginx.sh /usr/local/bin/start-nginx
 RUN chmod 754 /usr/local/bin/start-nginx
-    
-# 3. Copy application code, skipping files based on .dockerignore
+
+# 3. Copiar código de la aplicación
 COPY . /var/www/html
 WORKDIR /var/www/html
 
-# 4. Setup application dependencies 
+# 4. Instalar dependencias de la aplicación
 RUN composer install --optimize-autoloader --no-dev \
     && mkdir -p storage/logs \
     && php artisan optimize:clear \
     && chown -R www-data:www-data /var/www/html \
-    && echo "MAILTO=\"\"\n* * * * * www-data /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel \
-    && sed -i='' '/->withMiddleware(function (Middleware \$middleware) {/a\
-        \$middleware->trustProxies(at: "*");\
-    ' bootstrap/app.php; \ 
-    if [ -d .fly ]; then cp .fly/entrypoint.sh /entrypoint; chmod +x /entrypoint; fi;
+    && echo 'MAILTO=""' > /etc/cron.d/laravel \
+    && echo '* * * * * www-data /usr/bin/php /var/www/html/artisan schedule:run' >> /etc/cron.d/laravel \
+    && sed -i='' '/->withMiddleware(function (Middleware $middleware) {/a\
+        $middleware->trustProxies(at: "*");\
+    ' bootstrap/app.php \
+    && if [ -d .fly ]; then cp .fly/entrypoint.sh /entrypoint; chmod +x /entrypoint; fi
 
 
+# -------------------------------------------------------
+# Multi-stage: compilar assets estáticos con Node
+# -------------------------------------------------------
+FROM node:${NODE_VERSION} AS node_modules_go_brrr
 
-
-# Multi-stage build: Build static assets
-# This allows us to not include Node within the final container
-FROM node:${NODE_VERSION} as node_modules_go_brrr
-
-RUN mkdir /app
-
-RUN mkdir -p  /app
 WORKDIR /app
 COPY . .
 COPY --from=base /var/www/html/vendor /app/vendor
 
-# Use yarn or npm depending on what type of
-# lock file we might find. Defaults to
-# NPM if no lock file is found.
-# Note: We run "production" for Mix and "build" for Vite
 RUN if [ -f "vite.config.js" ] || [ -f "vite.config.ts" ]; then \
         ASSET_CMD="build"; \
     else \
@@ -121,22 +118,17 @@ RUN if [ -f "vite.config.js" ] || [ -f "vite.config.ts" ]; then \
     else \
         npm install; \
         npm run $ASSET_CMD; \
-    fi;
+    fi
 
-# From our base container created above, we
-# create our final image, adding in static
-# assets that we generated above
+# -------------------------------------------------------
+# Imagen final: combinar base + assets compilados
+# -------------------------------------------------------
 FROM base
 
-# Packages like Laravel Nova may have added assets to the public directory
-# or maybe some custom assets were added manually! Either way, we merge
-# in the assets we generated above rather than overwrite them
 COPY --from=node_modules_go_brrr /app/public /var/www/html/public-npm
 RUN rsync -ar /var/www/html/public-npm/ /var/www/html/public/ \
     && rm -rf /var/www/html/public-npm \
     && chown -R www-data:www-data /var/www/html
 
-# 5. Setup Entrypoint
 EXPOSE 8080
-
 ENTRYPOINT ["/entrypoint"]
