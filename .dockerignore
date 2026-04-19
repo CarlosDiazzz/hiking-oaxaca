@@ -1,12 +1,37 @@
-FROM serversideup/php:8.4-fpm-nginx
+# excludes from the docker image/build
 
-# Configuraciones básicas
-ENV PHP_OPCACHE_ENABLE=1
-ENV AUTORUN_LARAVEL_MIGRATION=false
-ENV AUTORUN_LARAVEL_STORAGE_LINK=false
+# 1. Ignore Laravel-specific files we don't need
+bootstrap/cache/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+*.env*
+.rr.yml
+rr
+frankenphp
+vendor
 
-# Copiar el código pre-construido de tu computadora al servidor
-COPY --chown=www-data:www-data . /var/www/html/
+# 2. Ignore common files/directories we don't need
+fly.toml
+.vscode
+.idea
+**/*node_modules
+**.git
+**.gitignore
+**.gitattributes
+**.sass-cache
+**/*~
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+public/hot
+node_modules
+vendor
+public/storage
 
-# Instalar dependencias extra si hicieran falta (opcional)
-RUN apt-get update && apt-get install -y postgresql-client && apt-get clean
+.git
+.env
+node_modules
+tests
+storage/logs
