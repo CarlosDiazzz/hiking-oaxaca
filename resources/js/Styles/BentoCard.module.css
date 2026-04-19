@@ -1,0 +1,31 @@
+.bentoCard {
+    position: relative;
+    border-radius: 2rem;
+    overflow: hidden;
+    box-shadow: 0 20px 40px -15px rgba(26, 67, 43, 0.2);
+    transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    transform: translateZ(0); /* Hardware acceleration */
+}
+
+.bentoCard::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+}
+
+.bentoCard:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 30px 60px -20px rgba(26, 67, 43, 0.4);
+}
+
+.scrollbarHidden::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbarHidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

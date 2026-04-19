@@ -1,0 +1,12 @@
+FROM serversideup/php:8.4-fpm-nginx
+
+# Configuraciones básicas
+ENV PHP_OPCACHE_ENABLE=1
+ENV AUTORUN_LARAVEL_MIGRATION=false
+ENV AUTORUN_LARAVEL_STORAGE_LINK=false
+
+# Copiar el código pre-construido de tu computadora al servidor
+COPY --chown=www-data:www-data . /var/www/html/
+
+# Instalar dependencias extra si hicieran falta (opcional)
+RUN apt-get update && apt-get install -y postgresql-client && apt-get clean
