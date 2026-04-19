@@ -23,18 +23,22 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PHP_UPLOAD_MAX_FILE_SIZE=100M \
     PHP_ALLOW_URL_FOPEN=Off
 
-# 1. Instalar PHP y Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY .fly/php/ondrej_ubuntu_php.gpg /etc/apt/trusted.gpg.d/ondrej_ubuntu_php.gpg
 ADD .fly/php/packages/${PHP_VERSION}.txt /tmp/php-packages.txt
 
-RUN echo "deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /etc/apt/sources.list.d/ondrej-ubuntu-php.list \
-    && apt-get clean \
+# PASO 1: Instalar ca-certificates PRIMERO y agregar el PPA
+# Esto es necesario para que HTTPS funcione al descargar paquetes del PPA
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates openssl \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get update \
+    && echo "deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" \
+       > /etc/apt/sources.list.d/ondrej-ubuntu-php.list
+
+# PASO 2: Ahora sí actualizar con el PPA disponible e instalar todo
+RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        gnupg2 \
-       ca-certificates \
        git-core \
        curl \
        zip \
@@ -53,7 +57,7 @@ RUN echo "deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
-# 2. Copiar archivos de configuración
+# Copiar archivos de configuración
 COPY .fly/nginx/ /etc/nginx/
 COPY .fly/fpm/ /etc/php/${PHP_VERSION}/fpm/
 COPY .fly/supervisor/ /etc/supervisor/
@@ -61,11 +65,11 @@ COPY .fly/entrypoint.sh /entrypoint
 COPY .fly/start-nginx.sh /usr/local/bin/start-nginx
 RUN chmod 754 /usr/local/bin/start-nginx
 
-# 3. Copiar código de la aplicación
+# Copiar código de la aplicación
 COPY . /var/www/html
 WORKDIR /var/www/html
 
-# 4. Instalar dependencias de la aplicación
+# Instalar dependencias de la aplicación
 RUN composer install --optimize-autoloader --no-dev \
     && mkdir -p storage/logs \
     && php artisan optimize:clear \
@@ -79,7 +83,7 @@ RUN composer install --optimize-autoloader --no-dev \
 
 
 # -------------------------------------------------------
-# Multi-stage: compilar assets estáticos con Node
+# Multi-stage: compilar assets con Node
 # -------------------------------------------------------
 FROM node:${NODE_VERSION} AS node_modules_go_brrr
 
@@ -108,7 +112,7 @@ RUN if [ -f "vite.config.js" ] || [ -f "vite.config.ts" ]; then \
     fi
 
 # -------------------------------------------------------
-# Imagen final: combinar base + assets compilados
+# Imagen final
 # -------------------------------------------------------
 FROM base
 
