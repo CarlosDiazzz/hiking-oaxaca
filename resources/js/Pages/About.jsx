@@ -3,6 +3,33 @@ import PillMenu from '@/Components/PillMenu';
 import Footer from '@/Components/Footer';
 
 export default function About() {
+    const values = [
+        {
+            title: 'Responsabilidad ambiental',
+            description: 'Cuidado y respeto por los recursos naturales en cada actividad realizada.',
+        },
+        {
+            title: 'Compromiso social',
+            description: 'Apoyo al desarrollo de las comunidades locales mediante la integración de servicios y actores de la región.',
+        },
+        {
+            title: 'Autenticidad',
+            description: 'Ofrecer experiencias genuinas que reflejen la esencia natural y cultural del destino.',
+        },
+        {
+            title: 'Seguridad',
+            description: 'Priorizar el bienestar de los visitantes durante todo el recorrido.',
+        },
+        {
+            title: 'Respeto',
+            description: 'Fomentar una convivencia armónica entre visitantes, comunidad y entorno.',
+        },
+        {
+            title: 'Calidad en el servicio',
+            description: 'Garantizar una atención organizada, puntual y satisfactoria.',
+        },
+    ];
+
     return (
         <div className="bg-[#F7F7F4] text-[#1A432B] min-h-screen flex flex-col">
             <Head title="Nuestra Historia | Hiking Oaxaca" />
@@ -47,6 +74,24 @@ export default function About() {
                             Ser una empresa líder en turismo de naturaleza en Oaxaca, reconocida por ofrecer experiencias únicas de hiking en la Sierra Norte, destacando por su compromiso con la conservación del medio ambiente, el desarrollo de las comunidades locales y la satisfacción de nuestros clientes.
                         </p>
                     </div>
+
+                    <section className="my-16 not-prose">
+                        <div className="mb-8">
+                            <p className="text-[#D4AF37] uppercase tracking-[0.25em] text-xs font-bold mb-3">Nuestros Valores</p>
+                            <h3 className="text-3xl md:text-4xl font-bold text-[#1A432B]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                                Principios que guian cada recorrido
+                            </h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {values.map((value) => (
+                                <article key={value.title} className="p-6 rounded-2xl bg-white border border-[#1A432B]/10 shadow-[0_10px_30px_rgba(26,67,43,0.06)]">
+                                    <h4 className="text-lg font-bold text-[#1A432B] mb-2">{value.title}</h4>
+                                    <p className="text-sm leading-relaxed text-[#1A432B]/75 m-0">{value.description}</p>
+                                </article>
+                            ))}
+                        </div>
+                    </section>
                 </div>
             </main>
 

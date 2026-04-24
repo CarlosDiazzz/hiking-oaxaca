@@ -34,6 +34,10 @@ Route::get('/nosotros', function () {
     return Inertia::render('About');
 })->name('about');
 
+Route::get('/historia', function () {
+    return Inertia::render('Historia');
+})->name('historia');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/admin/reservas', [AdminController::class, 'dashboard'])->name('admin.reservations.dashboard');

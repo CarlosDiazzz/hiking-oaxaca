@@ -45,11 +45,29 @@ export default function PillMenu() {
                 </li>
                 <li>
                     <Link
+                        href="/#historia"
+                        onClick={(e) => handleSmoothScroll(e, "#historia")}
+                        className="text-white text-xs font-semibold tracking-widest uppercase hover:text-[#D4AF37] transition-colors px-4"
+                    >
+                        Historia
+                    </Link>
+                </li>
+                <li>
+                    <Link
                         href="/#itinerario"
                         onClick={(e) => handleSmoothScroll(e, "#itinerario")}
                         className="text-white text-xs font-semibold tracking-widest uppercase hover:text-[#D4AF37] transition-colors px-4"
                     >
                         Ruta
+                    </Link>
+                </li>
+                <li>
+                    <Link
+                        href="/#ubicacion"
+                        onClick={(e) => handleSmoothScroll(e, "#ubicacion")}
+                        className="text-white text-xs font-semibold tracking-widest uppercase hover:text-[#D4AF37] transition-colors px-4"
+                    >
+                        Ubicacion
                     </Link>
                 </li>
                 <li>
