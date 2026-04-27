@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Volume2, VolumeX } from "lucide-react";
 import BentoCard from "@/Components/BentoCard";
 import PillMenu from "@/Components/PillMenu";
 import Ubicacion from "@/Components/Ubicacion";
 import Footer from "@/Components/Footer";
 import HistoriaPreview from "@/Components/HistoriaPreview";
 import StatCards from "@/Components/StatCards";
+import VideoExperiencia from "@/Components/VideoExperiencia";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -66,7 +68,7 @@ const timelineMoments = [
         time: "Parada 4",
         title: "Pozo de los deseos",
         type: "gallery",
-        image: "/images/stops/mirador.jpg",
+        image: "/images/stops/pozo.jpg",
         desc: "Manantial de aguas cristalinas.",
     },
     {
@@ -116,6 +118,7 @@ export default function Welcome() {
     const scrollContainerRef = useRef(null);
     const flashSuccess = usePage().props?.flash?.success;
     const [showToast, setShowToast] = useState(Boolean(flashSuccess));
+    const [isGlobalMuted, setIsGlobalMuted] = useState(true);
 
     useEffect(() => {
         if (!flashSuccess) {
@@ -291,6 +294,7 @@ export default function Welcome() {
                 </div>
             </section>
             <StatCards />
+            <VideoExperiencia />
 
             {/* SECCIÓN TIMELINE ANIMADA CON GSAP */}
             <main
@@ -364,6 +368,22 @@ export default function Welcome() {
             </main>
             <Ubicacion />
             <Footer />
+
+            {/* CONTROLADOR DE AUDIO GLOBAL (GLASSMORPHISM) */}
+            <div className="fixed top-6 right-6 left-auto bottom-auto md:top-auto md:bottom-6 md:right-6 z-[100]">
+                <button
+                    onClick={() => setIsGlobalMuted(!isGlobalMuted)}
+                    className="p-3.5 rounded-full bg-[#111111]/40 backdrop-blur-xl border border-white/10 text-[#D4AF37] shadow-[0_10px_30px_rgba(10,26,16,0.5)] hover:bg-[#0A1A10] hover:text-white hover:scale-110 transition-all duration-300 flex items-center justify-center group"
+                    aria-label="Control de audio ambiental"
+                >
+                    {isGlobalMuted ? (
+                        <VolumeX size={22} className="transition-colors" />
+                    ) : (
+                        <Volume2 size={22} className="transition-colors" />
+                    )}
+                </button>
+                <audio id="global-forest-audio" src="/audio/bosque.mp3" loop muted={isGlobalMuted} autoPlay />
+            </div>
         </div>
     );
 }

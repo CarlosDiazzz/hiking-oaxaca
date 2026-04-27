@@ -18,6 +18,7 @@
         @viteReactRefresh
         @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
         @inertiaHead
+        <link rel="icon" href="/images/logo1to1.jpg" type="image/png" />
     </head>
     <body class="font-sans antialiased">
         @inertia

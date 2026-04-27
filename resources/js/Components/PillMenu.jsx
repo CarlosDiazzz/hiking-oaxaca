@@ -23,7 +23,7 @@ export default function PillMenu() {
     return (
         <nav className="fixed bottom-8 md:bottom-auto md:top-8 left-1/2 transform -translate-x-1/2 z-[100]">
             {/* Cambiamos la opacidad de /90 a /40 para un efecto glassmorphism premium */}
-            <ul className="flex items-center gap-2 md:gap-6 px-2 py-2 bg-[#111111]/40 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+            <ul className="flex items-center gap-2 md:gap-6 px-2 py-2 bg-[#111111]/40 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl overflow-x-auto whitespace-nowrap max-w-[95vw] md:max-w-none no-scrollbar">
                 <li>
                     {/* Añadimos la función apuntando a '0' (top) */}
                     <Link
