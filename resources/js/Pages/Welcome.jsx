@@ -58,7 +58,7 @@ const timelineMoments = [
     {
         id: "cueva",
         time: "Parada 3",
-        title: "Cueva niño perdido",
+        title: "Cueva del Elefante",
         type: "gallery",
         image: "/images/stops/cueva.jpg",
         desc: "Misterio y naturaleza en las profundidades.",
