@@ -116,6 +116,7 @@ const timelineMoments = [
 export default function Welcome() {
     const pinRef = useRef(null);
     const scrollContainerRef = useRef(null);
+    const audioRef = useRef(null);
     const flashSuccess = usePage().props?.flash?.success;
     const [showToast, setShowToast] = useState(Boolean(flashSuccess));
     const [isGlobalMuted, setIsGlobalMuted] = useState(true);
@@ -130,6 +131,22 @@ export default function Welcome() {
         const timeoutId = window.setTimeout(() => setShowToast(false), 5000);
         return () => window.clearTimeout(timeoutId);
     }, [flashSuccess]);
+
+    // Manejo correcto del audio para evitar bloqueo de autoplay del navegador
+    const toggleAudio = () => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        if (isGlobalMuted) {
+            // El usuario hizo click — interacción válida, el navegador permite play()
+            audio.muted = false;
+            audio.play().catch(() => {});
+            setIsGlobalMuted(false);
+        } else {
+            audio.muted = true;
+            setIsGlobalMuted(true);
+        }
+    };
 
     useGSAP(
         () => {
@@ -178,13 +195,12 @@ export default function Welcome() {
         <div className="bg-[#F7F7F4] text-[#1A432B] overflow-x-hidden">
             <Head title="Llano de las Flores | Ecoturismo Premium" />
             <style>{`
-                /* Estilos para ocultar la barra de scroll sin perder funcionalidad */
                 .no-scrollbar::-webkit-scrollbar {
                     display: none;
                 }
                 .no-scrollbar {
-                    -ms-overflow-style: none;  /* IE and Edge */
-                    scrollbar-width: none;  /* Firefox */
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
                 }
             `}</style>
 
@@ -284,15 +300,16 @@ export default function Welcome() {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#1A432B]/40 via-transparent to-transparent"></div>
                                 <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 rounded-full bg-white/20 px-4 py-1.5 backdrop-blur-md border border-white/30 shadow-lg">
-                                <p className="text-xs font-bold uppercase tracking-widest text-white drop-shadow-sm">
-                                    Sierra Norte de Oaxaca
-                                </p>
-                            </div>
+                                    <p className="text-xs font-bold uppercase tracking-widest text-white drop-shadow-sm">
+                                        Sierra Norte de Oaxaca
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
+
             <StatCards />
             <VideoExperiencia />
 
@@ -319,7 +336,6 @@ export default function Welcome() {
                     className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide scrollbar-none no-scrollbar gap-12 px-6 md:px-[20vw] items-center w-full relative z-10 pt-32 md:pt-40 cursor-grab"
                 >
                     {timelineMoments.map((moment, index) => {
-                        // Lógica de Renderizado: Link vs Div estático
                         const CardWrapper =
                             moment.type === "gallery" ? Link : "div";
                         const wrapperProps =
@@ -334,7 +350,7 @@ export default function Welcome() {
                                 : {
                                       className:
                                           "block w-full h-full opacity-90 grayscale-[20%] cursor-default",
-                                  }; // Las de logística se ven ligeramente más apagadas y no suben al hover
+                                  };
 
                         return (
                             <div
@@ -342,7 +358,6 @@ export default function Welcome() {
                                 className="timeline-card w-[85vw] md:w-[450px] shrink-0 relative group snap-center"
                             >
                                 <CardWrapper {...wrapperProps}>
-                                    {/* Indicador visual de que hay galería solo si aplica */}
                                     {moment.type === "gallery" && (
                                         <div className="absolute -top-4 right-4 z-50 bg-[#D4AF37] text-black text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                             Ver Fotos
@@ -366,13 +381,16 @@ export default function Welcome() {
                     })}
                 </div>
             </main>
+
             <Ubicacion />
             <Footer />
 
-            {/* CONTROLADOR DE AUDIO GLOBAL (GLASSMORPHISM) */}
+            {/* CONTROLADOR DE AUDIO GLOBAL */}
+            {/* El audio arranca siempre muteado. Solo se activa cuando el usuario hace click,
+                lo que es una interacción válida y el navegador permite play() */}
             <div className="fixed top-6 right-6 left-auto bottom-auto md:top-auto md:bottom-6 md:right-6 z-[100]">
                 <button
-                    onClick={() => setIsGlobalMuted(!isGlobalMuted)}
+                    onClick={toggleAudio}
                     className="p-3.5 rounded-full bg-[#111111]/40 backdrop-blur-xl border border-white/10 text-[#D4AF37] shadow-[0_10px_30px_rgba(10,26,16,0.5)] hover:bg-[#0A1A10] hover:text-white hover:scale-110 transition-all duration-300 flex items-center justify-center group"
                     aria-label="Control de audio ambiental"
                 >
@@ -382,7 +400,8 @@ export default function Welcome() {
                         <Volume2 size={22} className="transition-colors" />
                     )}
                 </button>
-                <audio id="global-forest-audio" src="/audio/bosque.mp3" loop muted={isGlobalMuted} autoPlay />
+                {/* muted siempre en el elemento — el JS controla audio.muted directamente */}
+                <audio ref={audioRef} src="/audio/bosque.mp3" loop muted />
             </div>
         </div>
     );
